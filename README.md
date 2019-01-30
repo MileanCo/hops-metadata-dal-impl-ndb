@@ -23,6 +23,17 @@ And reload bashrc with:
 source ~/.bashrc
 ```
 
+# Mac users
+
+[Download MySQL Cluster](https://dev.mysql.com/downloads/cluster/)
+Set the LDFLAGS to find protobuf 2.5 that you can install with "brew install protobuf@2.5" and the mysql-cluster library path.
+Example:
+```
+export LDFLAGS="-L/usr/local/opt/protobuf@2.5/lib -L/usr/local/mysql-cluster-gpl-7.6.9-macos10.14-x86_64/lib"
+```
+
+
+
 Development Notes
 ===
 Updates to the schema should be done in the schema/update-schema_XXX.sql corresponding to the version you are working on.
