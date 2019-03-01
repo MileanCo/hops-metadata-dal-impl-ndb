@@ -19,6 +19,7 @@
 package io.hops.metadata.ndb;
 
 import io.hops.exception.StorageException;
+import io.hops.metadata.ndb.dalimpl.s3.S3MetadataClusterj;
 import io.hops.metadata.ndb.dalimpl.yarn.ContainerToSignalClusterJ;
 import io.hops.DalStorageFactory;
 import io.hops.StorageConnector;
@@ -52,6 +53,7 @@ import io.hops.metadata.ndb.dalimpl.yarn.rmstatestore.ApplicationStateClusterJ;
 import io.hops.metadata.ndb.dalimpl.yarn.rmstatestore.DelegationKeyClusterJ;
 import io.hops.metadata.ndb.dalimpl.yarn.rmstatestore.DelegationTokenClusterJ;
 import io.hops.metadata.ndb.mysqlserver.MysqlServerConnector;
+import io.hops.metadata.s3.dal.S3MetadataAccess;
 import io.hops.metadata.yarn.dal.ContainerIdToCleanDataAccess;
 import io.hops.metadata.yarn.dal.ContainerStatusDataAccess;
 import io.hops.metadata.yarn.dal.ContainerToDecreaseDataAccess;
@@ -181,6 +183,8 @@ public class NdbStorageFactory implements DalStorageFactory {
     dataAccessMap.put(CachePoolDataAccess.class, new CachePoolClusterJ());
     dataAccessMap.put(CachedBlockDataAccess.class, new CachedBlockClusterJ());
     dataAccessMap.put(ActiveBlockReportsDataAccess.class, new ActiveBlockReportsClusterj());
+    dataAccessMap.put(S3MetadataAccess.class, new S3MetadataClusterj());
+
   }
 
   @Override
