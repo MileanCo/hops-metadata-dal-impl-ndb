@@ -717,3 +717,21 @@ CREATE TABLE `yarn_reservation_state` (
   `state` VARBINARY(13000) NOT NULL,
   PRIMARY KEY (`plan_name`, `reservation_id_name`)
 ) ENGINE=ndbcluster DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs PARTITION BY KEY(reservation_id_name) $$
+
+delimiter $$
+
+CREATE TABLE `s3_metadata_store` (
+  `parent` VARCHAR(1024) NOT NULL,
+  `child` VARCHAR(255) NOT NULL,
+  `isDeleted` BOOL NOT NULL,
+  `bucket` VARCHAR(255) NOT NULL,
+  `blockSize` INT NOT NULL,
+  `fileLength` INT NOT NULL,
+  `modTime` INT NOT NULL,
+  `isDir` BIT NOT NULL,
+  `tableCreated` INT NOT NULL,
+  `tableVersion` INT NOT NULL,
+  PRIMARY KEY (`parent`, `child`)
+) ENGINE=ndbcluster DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs PARTITION BY KEY(parent) $$
+
+delimiter $$
