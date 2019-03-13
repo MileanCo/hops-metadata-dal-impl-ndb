@@ -5,6 +5,7 @@ import com.mysql.clusterj.annotation.PersistenceCapable;
 import com.mysql.clusterj.annotation.PrimaryKey;
 import io.hops.exception.StorageException;
 import io.hops.metadata.ndb.ClusterjConnector;
+import io.hops.metadata.ndb.NdbBoolean;
 import io.hops.metadata.ndb.wrapper.*;
 import io.hops.metadata.s3.TablesDef;
 import io.hops.metadata.s3.dal.S3MetadataAccess;
@@ -14,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3MetadataAccess<S3PathMetadata> {
-
     private ClusterjConnector connector = ClusterjConnector.getInstance();
 
     @PersistenceCapable(table = TABLE_NAME)
@@ -29,14 +29,13 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
         String getChild();
         void setChild(String child);
 
-        @PrimaryKey
         @Column(name = BUCKET)
         String getBucket();
         void setBucket(String bucket);
 
         @Column(name = IS_DELETED)
-        Boolean getIsDeleted();
-        void setIsDeleted(Boolean deleted);
+        byte getIsDeleted();
+        void setIsDeleted(byte deleted);
 
         @Column(name = BLOCK_SIZE)
         Long getBlockSize();
@@ -51,8 +50,8 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
         void setModTime(Long modTime);
 
         @Column(name = IS_DIR)
-        Boolean getIsDir();
-        void setIsDir(Boolean isDir);
+        byte getIsDir();
+        void setIsDir(byte isDir);
 
         @Column(name = TABLE_CREATED)
         Long getTableCreated();
@@ -64,15 +63,51 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
     }
 
     @Override
-    public S3PathMetadata getPath(String parent, String child) {
-        return null;
+    public S3PathMetadata getPath(String parent, String child) throws StorageException {
+        HopsSession session = connector.obtainSession();
+        HopsQueryBuilder qb = session.getQueryBuilder();
+
+        HopsQueryDomainType<S3PathMetadataDTO> dobj =  qb.createQueryDefinition (S3PathMetadataDTO.class);
+        dobj.where(dobj.get("parent").equal(dobj.param("parent_param")));
+        dobj.where(dobj.get("child").equal(dobj.param("child_param")));
+
+        HopsQuery<S3PathMetadataDTO> query = session.createQuery(dobj);
+        query.setParameter("parent_param", parent);
+        query.setParameter("child_param", child);
+        List<S3PathMetadataDTO> results = query.getResultList();
+
+        S3PathMetadata path = null;
+        if (results.size() == 1) {
+            S3PathMetadataDTO res = results.get(0);
+            path = new S3PathMetadata(
+                    res.getParent(),
+                    res.getChild(),
+                    res.getBucket(),
+                    NdbBoolean.convert(res.getIsDeleted()),
+                    res.getBlockSize(),
+                    res.getFileLength(),
+                    res.getModTime(),
+                    NdbBoolean.convert(res.getIsDir()),
+                    res.getTableCreated(),
+                    res.getTableVersion()
+            );
+        }
+        session.release(results);
+        return path;
+
     }
 
     @Override
     public boolean putPath(S3PathMetadata path) throws StorageException {
         HopsSession session = connector.obtainSession();
         S3PathMetadataDTO dto = null;
-        // TODO: check if this path already exists? INSERT OR UPDATE?
+
+        // Check if path exists and delete if so
+        S3PathMetadata existing_path = getPath(path.getParent(), path.getChild());
+        if (existing_path != null) {
+            deletePath(path.getParent(), path.getChild());
+        }
+
         try {
             dto = session.newInstance(S3PathMetadataDTO.class);
 
@@ -81,9 +116,10 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
             dto.setBucket(path.getBucket());
             dto.setBlockSize(path.getBlockSize());
             dto.setFileLength(path.getFileLength());
-            dto.setIsDeleted(path.isDeleted());
-            dto.setIsDir(path.isDir());
+            dto.setIsDeleted(NdbBoolean.convert(path.isDeleted()));
+            dto.setIsDir(NdbBoolean.convert(path.isDir()));
             dto.setModTime(path.getModTime());
+
 
             session.makePersistent(dto);
         } finally {
@@ -93,13 +129,27 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
     }
 
     @Override
-    public boolean deletePath(String parent, String child) {
-        return false;
+    public boolean deletePath(String parent, String child) throws StorageException {
+        HopsSession session = connector.obtainSession();
+        S3PathMetadataDTO dto = null;
+        try {
+            dto = session.newInstance(S3PathMetadataDTO.class);
+            dto.setParent(dto.getParent());
+            dto.setChild(dto.getChild());
+            session.deletePersistent(dto);
+        } finally {
+            session.release(dto);
+        }
+        return dto == null ? false : true;
     }
 
     @Override
     public boolean putPaths(List<S3PathMetadata> paths)throws StorageException  {
-        return false;
+        boolean success = true;
+        while (paths.iterator().hasNext()) {
+            success &= putPath(paths.iterator().next());
+        }
+        return success;
     }
 
     @Override
@@ -124,11 +174,11 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
             S3PathMetadata path = new S3PathMetadata();
             path.parent = dto.getParent();
             path.child = dto.getChild();
-            path.isDeleted = dto.getIsDeleted();
+            path.isDeleted = NdbBoolean.convert(dto.getIsDeleted());
             path.blockSize = dto.getBlockSize();
             path.fileLength = dto.getFileLength();
             path.modTime = dto.getModTime();
-            path.isDir = dto.getIsDir();
+            path.isDir = NdbBoolean.convert(dto.getIsDir());
             path.tableCreated = dto.getTableCreated();
             path.tableVersion = dto.getTableVersion();
 

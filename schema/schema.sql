@@ -723,14 +723,14 @@ delimiter $$
 CREATE TABLE `s3_metadata_store` (
   `parent` VARCHAR(1024) NOT NULL,
   `child` VARCHAR(255) NOT NULL,
-  `isDeleted` BOOL NOT NULL,
   `bucket` VARCHAR(255) NOT NULL,
-  `blockSize` INT NOT NULL,
-  `fileLength` INT NOT NULL,
-  `modTime` INT NOT NULL,
-  `isDir` BIT NOT NULL,
-  `tableCreated` INT NOT NULL,
-  `tableVersion` INT NOT NULL,
+  `is_deleted` tinyint DEFAULT 0,
+  `block_size` BIGINT NOT NULL,
+  `file_length` BIGINT NOT NULL,
+  `mod_time` BIGINT NOT NULL,
+  `is_dir` tinyint DEFAULT 0,
+  `table_created` BIGINT,
+  `table_version` BIGINT,
   PRIMARY KEY (`parent`, `child`)
 ) ENGINE=ndbcluster DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs PARTITION BY KEY(parent) $$
 
