@@ -87,9 +87,9 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
                     res.getBlockSize(),
                     res.getFileLength(),
                     res.getModTime(),
-                    NdbBoolean.convert(res.getIsDir()),
-                    res.getTableCreated(),
-                    res.getTableVersion()
+                    NdbBoolean.convert(res.getIsDir())
+//                    res.getTableCreated(),
+//                    res.getTableVersion()
             );
         }
         session.release(results);
@@ -179,8 +179,8 @@ public class S3MetadataClusterj implements TablesDef.S3PathMetadataTableDef, S3M
             path.fileLength = dto.getFileLength();
             path.modTime = dto.getModTime();
             path.isDir = NdbBoolean.convert(dto.getIsDir());
-            path.tableCreated = dto.getTableCreated();
-            path.tableVersion = dto.getTableVersion();
+//            path.tableCreated = dto.getTableCreated();
+//            path.tableVersion = dto.getTableVersion();
 
             list.add(path);
             session.release(dto);
