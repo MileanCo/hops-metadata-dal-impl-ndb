@@ -722,7 +722,7 @@ delimiter $$
 
 CREATE TABLE `s3_metadata_store` (
   `parent` VARCHAR(1024) NOT NULL,
-  `child` VARCHAR(255) NOT NULL,
+  `child` VARCHAR(255),
   `bucket` VARCHAR(255) NOT NULL,
   `is_deleted` tinyint DEFAULT 0,
   `block_size` BIGINT NOT NULL,

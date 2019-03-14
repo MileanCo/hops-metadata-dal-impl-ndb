@@ -18,14 +18,9 @@
  */
 package io.hops.metadata.ndb.dalimpl.hdfs;
 
-import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.mysql.clusterj.LockMode;
-import com.mysql.clusterj.annotation.Column;
-import com.mysql.clusterj.annotation.Index;
-import com.mysql.clusterj.annotation.PartitionKey;
-import com.mysql.clusterj.annotation.PersistenceCapable;
-import com.mysql.clusterj.annotation.PrimaryKey;
+import com.mysql.clusterj.annotation.*;
 import io.hops.exception.StorageException;
 import io.hops.metadata.hdfs.TablesDef;
 import io.hops.metadata.hdfs.dal.INodeDataAccess;
@@ -37,16 +32,12 @@ import io.hops.metadata.ndb.ClusterjConnector;
 import io.hops.metadata.ndb.NdbBoolean;
 import io.hops.metadata.ndb.mysqlserver.MySQLQueryHelper;
 import io.hops.metadata.ndb.mysqlserver.MysqlServerConnector;
-import io.hops.metadata.ndb.wrapper.HopsPredicate;
-import io.hops.metadata.ndb.wrapper.HopsQuery;
-import io.hops.metadata.ndb.wrapper.HopsQueryBuilder;
-import io.hops.metadata.ndb.wrapper.HopsQueryDomainType;
-import io.hops.metadata.ndb.wrapper.HopsSession;
+import io.hops.metadata.ndb.wrapper.*;
 import io.hops.transaction.context.EntityContext;
 
-import java.util.*;
-
-import static io.hops.transaction.context.EntityContext.LockMode.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class INodeClusterj implements TablesDef.INodeTableDef, INodeDataAccess<INode> {
 //  static final Logger LOG = Logger.getLogger(INodeClusterj.class);
@@ -654,7 +645,7 @@ public class INodeClusterj implements TablesDef.INodeTableDef, INodeDataAccess<I
     HopsPredicate pred2 = dobj.get("partitionId").equal(dobj.param("partitionIDParam"));
     if(areChildRandomlyPartitioned){
       dobj.where(pred1);
-    }else{
+    } else {
       dobj.where(pred2.and(pred1));
     }
     HopsQuery<InodeDTO> query = session.createQuery(dobj);
