@@ -29,6 +29,7 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
         String getChild();
         void setChild(String child);
 
+        @PrimaryKey
         @Column(name = BUCKET)
         String getBucket();
         void setBucket(String bucket);
@@ -63,7 +64,7 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     }
 
     @Override
-    public S3PathMeta getPath(String parent, String child) throws StorageException {
+    public S3PathMeta getPath(String parent, String child, String bucket) throws StorageException {
         HopsSession session = connector.obtainSession();
         HopsQueryBuilder qb = session.getQueryBuilder();
 
@@ -133,7 +134,7 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     }
 
     @Override
-    public void deletePath(String parent, String child) throws StorageException {
+    public void deletePath(String parent, String child, String bucket) throws StorageException {
         HopsSession session = connector.obtainSession();
         S3PathMetaDTO dto = null;
         try {
@@ -177,9 +178,9 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     }
 
     @Override
-    public boolean isDirEmpty(String parent, String child) throws StorageException {
+    public boolean isDirEmpty(String parent, String child, String bucket) throws StorageException {
         String dir_key = parent + '/' + child;
-        List<S3PathMeta> dir_children = getPathChildren(dir_key);
+        List<S3PathMeta> dir_children = getPathChildren(dir_key, bucket);
         return dir_children.isEmpty();
     }
 
@@ -210,12 +211,12 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     }
 
     @Override
-    public void deleteBucket(String table_name) {
+    public void deleteBucket(String bucketName) {
 
     }
 
     @Override
-    public List<S3PathMeta> getExpiredFiles(long modTime) throws StorageException {
+    public List<S3PathMeta> getExpiredFiles(long modTime, String bucket) throws StorageException {
         HopsSession session = connector.obtainSession();
         HopsQueryBuilder qb = session.getQueryBuilder();
 
@@ -232,7 +233,7 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     }
 
     @Override
-    public List<S3PathMeta> getPathChildren(String parent) throws StorageException {
+    public List<S3PathMeta> getPathChildren(String parent, String bucket) throws StorageException {
         HopsSession session = connector.obtainSession();
         HopsQueryBuilder qb = session.getQueryBuilder();
 
@@ -240,12 +241,13 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
         HopsQueryDomainType<S3PathMetaDTO> qdt = qb.createQueryDefinition(S3PathMetaDTO.class);
         HopsPredicate pred1 = qdt.get("parent").equal(qdt.param("parent_param"));
         HopsPredicate pred2 = qdt.get("child").isNotNull(); //qdt.param("child_param"));
-        qdt.where(pred1.and(pred2));
+        HopsPredicate pred3 = qdt.get("bucket").equal(qdt.param("bucket_param"));
+        qdt.where(pred1.and(pred2).and(pred3));
 
         // Set the query search parameters
         HopsQuery<S3PathMetaDTO> query = session.createQuery(qdt);
         query.setParameter("parent_param", parent);
-//        query.setParameter("child_param", "");
+        query.setParameter("bucket_param", bucket);
 
 
         return convertAndRelease(session, query.getResultList());
