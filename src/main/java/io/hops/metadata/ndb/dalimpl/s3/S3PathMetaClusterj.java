@@ -66,19 +66,8 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     @Override
     public S3PathMeta getPath(String parent, String child, String bucket) throws StorageException {
         HopsSession session = connector.obtainSession();
-        HopsQueryBuilder qb = session.getQueryBuilder();
 
-//        HopsQueryDomainType<S3PathMetaDTO> qdt =  qb.createQueryDefinition (S3PathMetaDTO.class);
-//        HopsPredicate pred1 = qdt.get("parent").equal(qdt.param("parent_param"));
-//        HopsPredicate pred2 = qdt.get("child").equal(qdt.param("child_param"));
-//        qdt.where(pred1.and(pred2));
-//
-//        HopsQuery<S3PathMetaDTO> query = session.createQuery(qdt);
-//        query.setParameter("parent_param", parent);
-//        query.setParameter("child_param", child);
-//        List<S3PathMetaDTO> results = query.getResultList();
-
-        S3PathMetaDTO dto = session.find(S3PathMetaDTO.class, new Object[]{parent, child});
+        S3PathMetaDTO dto = session.find(S3PathMetaDTO.class, new Object[]{bucket, parent, child});
         if (dto == null) {
             return null;
         }
@@ -139,8 +128,9 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
         S3PathMetaDTO dto = null;
         try {
             dto = session.newInstance(S3PathMetaDTO.class);
-            dto.setParent(dto.getParent());
-            dto.setChild(dto.getChild());
+            dto.setBucket(bucket);
+            dto.setParent(parent);
+            dto.setChild(child);
             session.deletePersistent(dto);
         } finally {
             session.release(dto);
@@ -211,8 +201,9 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     }
 
     @Override
-    public void deleteBucket(String bucketName) {
-
+    public void deleteBucket(String bucketName) throws StorageException {
+        HopsSession session = connector.obtainSession();
+//        deletePersistentAll()
     }
 
     @Override
@@ -223,11 +214,23 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
         // build the SQL query
         HopsQueryDomainType<S3PathMetaDTO> qdt = qb.createQueryDefinition(S3PathMetaDTO.class);
         HopsPredicate pred1 = qdt.get("modTime").lessEqual(qdt.param("modTimeParam"));
-        qdt.where(pred1);
+        if (bucket != null) {
+            HopsPredicate pred2 = qdt.get("bucket").lessEqual(qdt.param("bucket_param"));
+            qdt.where(pred1.and(pred2));
+        } else {
+            qdt.where(pred1);
+        }
+
 
         // Set the query search parameters
         HopsQuery<S3PathMetaDTO> query = session.createQuery(qdt);
-        query.setParameter("modTimeParam", modTime);
+        if (bucket != null) {
+            query.setParameter("modTimeParam", modTime);
+            query.setParameter("bucket_param", bucket);
+        } else {
+            query.setParameter("modTimeParam", modTime);
+        }
+
 
         return convertAndRelease(session, query.getResultList());
     }
@@ -239,15 +242,17 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
 
         // build the SQL query
         HopsQueryDomainType<S3PathMetaDTO> qdt = qb.createQueryDefinition(S3PathMetaDTO.class);
-        HopsPredicate pred1 = qdt.get("parent").equal(qdt.param("parent_param"));
-        HopsPredicate pred2 = qdt.get("child").isNotNull(); //qdt.param("child_param"));
-        HopsPredicate pred3 = qdt.get("bucket").equal(qdt.param("bucket_param"));
+        HopsPredicate pred1 = qdt.get("bucket").equal(qdt.param("bucket_param"));
+        HopsPredicate pred2 = qdt.get("parent").equal(qdt.param("parent_param"));
+        HopsPredicate pred3 = qdt.get("child").equal(qdt.param("child_param")).not();
         qdt.where(pred1.and(pred2).and(pred3));
 
         // Set the query search parameters
         HopsQuery<S3PathMetaDTO> query = session.createQuery(qdt);
-        query.setParameter("parent_param", parent);
         query.setParameter("bucket_param", bucket);
+        query.setParameter("parent_param", parent);
+        query.setParameter("child_param", "");
+
 
 
         return convertAndRelease(session, query.getResultList());

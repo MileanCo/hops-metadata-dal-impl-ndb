@@ -721,9 +721,9 @@ CREATE TABLE `yarn_reservation_state` (
 delimiter $$
 
 CREATE TABLE `s3_metadata_store` (
-  `parent` VARCHAR(1024) NOT NULL,
-  `child` VARCHAR(255),
   `bucket` VARCHAR(255) NOT NULL,
+  `parent` VARCHAR(1024) NOT NULL,
+  `child` VARCHAR(255) NOT NULL,
   `is_deleted` tinyint DEFAULT 0,
   `block_size` BIGINT NOT NULL,
   `file_length` BIGINT NOT NULL,
@@ -731,7 +731,7 @@ CREATE TABLE `s3_metadata_store` (
   `is_dir` tinyint DEFAULT 0,
   `table_created` BIGINT,
   `table_version` BIGINT,
-  PRIMARY KEY (`parent`, `child`)
+  PRIMARY KEY (`bucket`, `parent`, `child`)
 ) ENGINE=ndbcluster DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs PARTITION BY KEY(parent) $$
 
 delimiter $$
