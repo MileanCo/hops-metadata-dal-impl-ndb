@@ -34,21 +34,9 @@ import io.hops.metadata.ndb.dalimpl.hdfs.*;
 import io.hops.metadata.ndb.mysqlserver.MysqlServerConnector;
 import io.hops.metadata.ndb.wrapper.HopsSession;
 import io.hops.metadata.ndb.wrapper.HopsTransaction;
-import io.hops.metadata.yarn.dal.ContainerIdToCleanDataAccess;
-import io.hops.metadata.yarn.dal.ContainerStatusDataAccess;
-import io.hops.metadata.yarn.dal.ContainerToDecreaseDataAccess;
-import io.hops.metadata.yarn.dal.ContainerToSignalDataAccess;
-import io.hops.metadata.yarn.dal.NextHeartbeatDataAccess;
-import io.hops.metadata.yarn.dal.PendingEventDataAccess;
-import io.hops.metadata.yarn.dal.RMLoadDataAccess;
-import io.hops.metadata.yarn.dal.RMNodeDataAccess;
-import io.hops.metadata.yarn.dal.ResourceDataAccess;
-import io.hops.metadata.yarn.dal.UpdatedContainerInfoDataAccess;
-import io.hops.metadata.yarn.dal.quota.ContainersCheckPointsDataAccess;
-import io.hops.metadata.yarn.dal.quota.ContainersLogsDataAccess;
-import io.hops.metadata.yarn.dal.quota.PriceMultiplicatorDataAccess;
-import io.hops.metadata.yarn.dal.quota.ProjectQuotaDataAccess;
-import io.hops.metadata.yarn.dal.quota.ProjectsDailyCostDataAccess;
+import io.hops.metadata.s3.dal.S3PathMetaDataAccess;
+import io.hops.metadata.yarn.dal.*;
+import io.hops.metadata.yarn.dal.quota.*;
 import io.hops.metadata.yarn.dal.rmstatestore.ApplicationAttemptStateDataAccess;
 import io.hops.metadata.yarn.dal.rmstatestore.ApplicationStateDataAccess;
 import io.hops.metadata.yarn.dal.rmstatestore.DelegationKeyDataAccess;
@@ -58,8 +46,6 @@ import org.apache.commons.logging.LogFactory;
 
 import java.sql.SQLException;
 import java.util.Properties;
-import io.hops.metadata.yarn.dal.RMNodeApplicationsDataAccess;
-import io.hops.metadata.yarn.dal.ReservationStateDataAccess;
 
 public class ClusterjConnector implements StorageConnector<DBSession> {
 
@@ -364,7 +350,7 @@ public class ClusterjConnector implements StorageConnector<DBSession> {
         HashBucketDataAccess.class, StorageDataAccess.class,
         AceDataAccess.class, RetryCacheEntryDataAccess.class, CacheDirectiveDataAccess.class,
         CachePoolDataAccess.class, CachedBlockDataAccess.class,
-        ActiveBlockReportsDataAccess.class);
+        ActiveBlockReportsDataAccess.class, S3PathMetaDataAccess.class);
   }
   
   private boolean formatAll(boolean transactional) throws StorageException {
@@ -573,6 +559,8 @@ public class ClusterjConnector implements StorageConnector<DBSession> {
             truncate(transactional, io.hops.metadata.hdfs.TablesDef.CachedBlockTableDef.TABLE_NAME);
           } else if (e == ActiveBlockReportsDataAccess.class){
             truncate(transactional, io.hops.metadata.hdfs.TablesDef.ActiveBlockReports.TABLE_NAME);
+          } else if (e == S3PathMetaDataAccess.class){
+            truncate(transactional, io.hops.metadata.s3.TablesDef.S3PathMetadataTableDef.TABLE_NAME);
           }
         }
         MysqlServerConnector.truncateTable(transactional,

@@ -203,7 +203,18 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
     @Override
     public void deleteBucket(String bucketName) throws StorageException {
         HopsSession session = connector.obtainSession();
-//        deletePersistentAll()
+        HopsQueryBuilder qb = session.getQueryBuilder();
+
+        // TODO: do an index mass-delete instead of a massive query?
+        HopsQueryDomainType<S3PathMetaDTO> qdt = qb.createQueryDefinition(S3PathMetaDTO.class);
+        HopsPredicate pred1 = qdt.get("bucket").lessEqual(qdt.param("bucketName"));
+        qdt.where(pred1);
+
+        // Set the query search parameters
+        HopsQuery<S3PathMetaDTO> query = session.createQuery(qdt);
+        query.setParameter("bucketName", bucketName);
+        session.deletePersistentAll(query.getResultList());
+        session.release(query.getResultList());
     }
 
     @Override
@@ -213,14 +224,13 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
 
         // build the SQL query
         HopsQueryDomainType<S3PathMetaDTO> qdt = qb.createQueryDefinition(S3PathMetaDTO.class);
-        HopsPredicate pred1 = qdt.get("modTime").lessEqual(qdt.param("modTimeParam"));
+        HopsPredicate pred1 = qdt.get("modTime").lessThan(qdt.param("modTimeParam"));
         if (bucket != null) {
-            HopsPredicate pred2 = qdt.get("bucket").lessEqual(qdt.param("bucket_param"));
+            HopsPredicate pred2 = qdt.get("bucket").equal(qdt.param("bucket_param"));
             qdt.where(pred1.and(pred2));
         } else {
             qdt.where(pred1);
         }
-
 
         // Set the query search parameters
         HopsQuery<S3PathMetaDTO> query = session.createQuery(qdt);
@@ -230,7 +240,6 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
         } else {
             query.setParameter("modTimeParam", modTime);
         }
-
 
         return convertAndRelease(session, query.getResultList());
     }
@@ -244,14 +253,15 @@ public class S3PathMetaClusterj implements TablesDef.S3PathMetadataTableDef, S3P
         HopsQueryDomainType<S3PathMetaDTO> qdt = qb.createQueryDefinition(S3PathMetaDTO.class);
         HopsPredicate pred1 = qdt.get("bucket").equal(qdt.param("bucket_param"));
         HopsPredicate pred2 = qdt.get("parent").equal(qdt.param("parent_param"));
-        HopsPredicate pred3 = qdt.get("child").equal(qdt.param("child_param")).not();
-        qdt.where(pred1.and(pred2).and(pred3));
+//        HopsPredicate pred3 = qdt.get("child").equal(qdt.param("child_param")).not();
+//        qdt.where(pred1.and(pred2).and(pred3));
+        qdt.where(pred1.and(pred2));
 
         // Set the query search parameters
         HopsQuery<S3PathMetaDTO> query = session.createQuery(qdt);
         query.setParameter("bucket_param", bucket);
         query.setParameter("parent_param", parent);
-        query.setParameter("child_param", "");
+//        query.setParameter("child_param", "");
 
 
 
